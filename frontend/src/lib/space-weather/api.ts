@@ -8,6 +8,7 @@ import {
   KpIndex,
   SolarWind,
   AuroraOval,
+  SolarActivity,
   PropagationForecast,
   SpaceWeatherAlert,
 } from './types';
@@ -224,6 +225,110 @@ class SpaceWeatherAPI {
   }
 
   /**
+   * Get solar activity data (X-ray flux, flares, proton flux)
+   */
+  async getSolarActivity(): Promise<SolarActivity | null> {
+    try {
+      const cached = this.getCache('solar-activity');
+      if (cached) return cached;
+
+      // Fetch X-ray flux and proton flux data in parallel
+      const [xrayResponse, protonResponse] = await Promise.all([
+        fetch(`${NOAA_BASE}/json/goes/primary/xrays-6-hour.json`),
+        fetch(`${NOAA_BASE}/json/goes/primary/integral-protons-plot-6-hour.json`),
+      ]);
+
+      if (!xrayResponse.ok) throw new Error('Failed to fetch X-ray data');
+
+      const xrayData = await xrayResponse.json();
+      const protonData = protonResponse.ok ? await protonResponse.json() : null;
+
+      // Get most recent X-ray flux readings
+      const latestXray = xrayData[xrayData.length - 1];
+      if (!latestXray) return null;
+
+      const shortWave = parseFloat(latestXray.flux) || 1e-9;
+      const longWave = parseFloat(latestXray.flux) || 1e-9; // NOAA typically provides combined flux
+
+      // Determine X-ray class based on flux level
+      const xrayClass = this.determineXrayClass(shortWave);
+
+      // Extract recent solar flares from X-ray data (spike detection)
+      const solarFlares = this.detectFlares(xrayData);
+
+      // Get most recent proton flux
+      let protonFlux = 1.0; // Default baseline
+      if (protonData && protonData.length > 0) {
+        const latestProton = protonData[protonData.length - 1];
+        protonFlux = parseFloat(latestProton.flux) || 1.0;
+      }
+
+      const solarActivity: SolarActivity = {
+        xrayFlux: {
+          shortWave,
+          longWave,
+          class: xrayClass,
+        },
+        solarFlares,
+        protonFlux,
+      };
+
+      this.setCache('solar-activity', solarActivity);
+      return solarActivity;
+    } catch (error) {
+      console.error('Failed to fetch solar activity:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Determine X-ray classification from flux level
+   * A: < 1e-7, B: < 1e-6, C: < 1e-5, M: < 1e-4, X: >= 1e-4
+   */
+  private determineXrayClass(flux: number): 'A' | 'B' | 'C' | 'M' | 'X' {
+    if (flux >= 1e-4) return 'X';
+    if (flux >= 1e-5) return 'M';
+    if (flux >= 1e-6) return 'C';
+    if (flux >= 1e-7) return 'B';
+    return 'A';
+  }
+
+  /**
+   * Detect solar flares from X-ray flux data
+   * Look for significant spikes in flux levels
+   */
+  private detectFlares(xrayData: any[]): Array<{ time: Date; class: string; region: string }> {
+    const flares: Array<{ time: Date; class: string; region: string }> = [];
+
+    // Sample last 100 data points for spike detection
+    const recentData = xrayData.slice(-100);
+
+    for (let i = 5; i < recentData.length - 5; i++) {
+      const current = parseFloat(recentData[i].flux) || 0;
+      const prev = parseFloat(recentData[i - 1].flux) || 0;
+      const next = parseFloat(recentData[i + 1].flux) || 0;
+
+      // Detect significant spike (10x increase)
+      if (current > prev * 10 && current > next) {
+        const xrayClass = this.determineXrayClass(current);
+
+        // Only record M and X class flares
+        if (xrayClass === 'M' || xrayClass === 'X') {
+          const magnitude = current / Math.pow(10, xrayClass === 'X' ? -4 : -5);
+          flares.push({
+            time: new Date(recentData[i].time_tag),
+            class: `${xrayClass}${magnitude.toFixed(1)}`,
+            region: 'Unknown', // NOAA API doesn't provide region in this endpoint
+          });
+        }
+      }
+    }
+
+    // Return most recent 5 flares
+    return flares.slice(-5);
+  }
+
+  /**
    * Get space weather alerts from NOAA
    */
   async getAlerts(): Promise<SpaceWeatherAlert[]> {
@@ -282,10 +387,11 @@ class SpaceWeatherAPI {
    * Get all space weather data
    */
   async getAllData(): Promise<SpaceWeatherData> {
-    const [kpIndex, solarWind, auroraOval, propagation, alerts] = await Promise.all([
+    const [kpIndex, solarWind, auroraOval, solarActivity, propagation, alerts] = await Promise.all([
       this.getKpIndex(),
       this.getSolarWind(),
       this.getAuroraOval(),
+      this.getSolarActivity(),
       this.getPropagationForecast(),
       this.getAlerts(),
     ]);
@@ -294,7 +400,7 @@ class SpaceWeatherAPI {
       kpIndex,
       solarWind,
       auroraOval,
-      solarActivity: null, // TODO: Add solar activity data
+      solarActivity,
       propagation,
       lastUpdate: new Date(),
       alerts,
