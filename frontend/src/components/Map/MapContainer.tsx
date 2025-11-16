@@ -11,6 +11,7 @@ import LayerPanel from '../LayerPanel/LayerPanel';
 import SpaceWeatherPanel from '../SpaceWeather/SpaceWeatherPanel';
 import PropagationPanel from '../SpaceWeather/PropagationPanel';
 import SatellitePanel from '../SpaceWeather/SatellitePanel';
+import { PinManagement } from './PinManagement';
 import { Clock, Layers as LayersIcon, Maximize2, Minimize2, Activity, Radio, Satellite as SatelliteIcon } from 'lucide-react';
 import { spaceWeatherAPI } from '@/lib/space-weather/api';
 import { satelliteTracker } from '@/lib/space-weather/satellite';
@@ -549,6 +550,9 @@ const MapContainer: React.FC = () => {
               <LayerPanel />
             </div>
           )}
+
+          {/* Pin Management */}
+          <PinManagement map={map.current} isLoaded={isLoaded} />
         </>
       )}
 
