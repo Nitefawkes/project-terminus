@@ -11,6 +11,7 @@ import LayerPanel from '../LayerPanel/LayerPanel';
 import SpaceWeatherPanel from '../SpaceWeather/SpaceWeatherPanel';
 import PropagationPanel from '../SpaceWeather/PropagationPanel';
 import SatellitePanel from '../SpaceWeather/SatellitePanel';
+import UserMenu from '../UserMenu/UserMenu';
 import { Clock, Layers as LayersIcon, Maximize2, Minimize2, Activity, Radio, Satellite as SatelliteIcon } from 'lucide-react';
 import { spaceWeatherAPI } from '@/lib/space-weather/api';
 import { satelliteTracker } from '@/lib/space-weather/satellite';
@@ -440,7 +441,7 @@ const MapContainer: React.FC = () => {
                 <h1 className="text-2xl font-bold text-white">Project Terminus</h1>
                 <p className="text-sm text-gray-300">Living World Clock & Intelligence Dashboard</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <button
                   onClick={toggleTimePanel}
                   className={clsx(
@@ -511,6 +512,8 @@ const MapContainer: React.FC = () => {
                 >
                   <Maximize2 className="w-4 h-4" />
                 </button>
+                <div className="h-8 w-px bg-gray-600 mx-2"></div>
+                <UserMenu />
               </div>
             </div>
           </div>
