@@ -10,9 +10,12 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { RSSService } from './services/rss.service';
 import { CollectionService } from './services/collection.service';
+import { ExportService } from './services/export.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { CreateFeedDto } from './dto/create-feed.dto';
@@ -24,6 +27,7 @@ import {
   AddFeedsToCollectionDto,
   RemoveFeedsFromCollectionDto,
 } from './dto/collection.dto';
+import { ExportItemsDto } from './dto/export.dto';
 
 @Controller('rss')
 @UseGuards(JwtAuthGuard)
@@ -31,6 +35,7 @@ export class RSSController {
   constructor(
     private readonly rssService: RSSService,
     private readonly collectionService: CollectionService,
+    private readonly exportService: ExportService,
   ) {}
 
   // ===== Feed Management =====
@@ -136,6 +141,50 @@ export class RSSController {
   @Get('stats')
   async getStats(@GetUser('id') userId: string) {
     return this.rssService.getStats(userId);
+  }
+
+  // ===== Export =====
+
+  @Post('export')
+  async exportItems(
+    @GetUser('id') userId: string,
+    @Body() exportDto: ExportItemsDto,
+    @Query() query: ItemQueryDto,
+    @Res() res: Response,
+  ) {
+    // Get items to export
+    let items;
+
+    if (exportDto.itemIds && exportDto.itemIds.length > 0) {
+      // Export specific items
+      items = await Promise.all(
+        exportDto.itemIds.map((id) => this.rssService.findOneItem(userId, id))
+      );
+    } else {
+      // Export based on current query
+      const result = await this.rssService.findAllItems(userId, {
+        ...query,
+        limit: 10000, // Max items for export
+        offset: 0,
+      });
+      items = result.items;
+    }
+
+    // Generate export data
+    const exportData = this.exportService.exportItems(items, {
+      format: exportDto.format,
+      includeMetadata: exportDto.includeMetadata,
+      fields: exportDto.fields,
+    });
+
+    // Set response headers
+    const mimeType = this.exportService.getMimeType(exportDto.format);
+    const extension = this.exportService.getFileExtension(exportDto.format);
+    const filename = `rss-export-${new Date().toISOString().split('T')[0]}.${extension}`;
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(exportData);
   }
 
   // ===== Feed Collections =====

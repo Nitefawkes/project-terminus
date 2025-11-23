@@ -25,6 +25,7 @@ import {
   UpdateCollectionRequest,
   AddFeedsToCollectionRequest,
   RemoveFeedsFromCollectionRequest,
+  ExportRequest,
 } from './rss-types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -326,6 +327,15 @@ class ApiClient {
 
   async getCollectionsByFeed(feedId: string): Promise<FeedCollection[]> {
     const response = await this.client.get<FeedCollection[]>(`/rss/feeds/${feedId}/collections`);
+    return response.data;
+  }
+
+  // RSS Export API
+  async exportItems(exportRequest: ExportRequest, query?: ItemQuery): Promise<Blob> {
+    const response = await this.client.post('/rss/export', exportRequest, {
+      params: query,
+      responseType: 'blob',
+    });
     return response.data;
   }
 

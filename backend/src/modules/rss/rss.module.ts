@@ -5,6 +5,7 @@ import { RSSService } from './services/rss.service';
 import { RSSParserService } from './services/rss-parser.service';
 import { GeocodingService } from './services/geocoding.service';
 import { CollectionService } from './services/collection.service';
+import { ExportService } from './services/export.service';
 import { RSSScheduler } from './rss.scheduler';
 import { RSSFeed } from './entities/rss-feed.entity';
 import { RSSItem } from './entities/rss-item.entity';
@@ -18,8 +19,9 @@ import { FeedCollection } from './entities/feed-collection.entity';
     RSSParserService,
     GeocodingService,
     CollectionService,
+    ExportService,
     RSSScheduler,
   ],
-  exports: [RSSService, CollectionService],
+  exports: [RSSService, CollectionService, ExportService],
 })
 export class RSSModule {}

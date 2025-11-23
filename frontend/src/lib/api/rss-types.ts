@@ -173,3 +173,16 @@ export interface AddFeedsToCollectionRequest {
 export interface RemoveFeedsFromCollectionRequest {
   feedIds: string[];
 }
+
+// Export
+export enum ExportFormat {
+  JSON = 'json',
+  CSV = 'csv',
+}
+
+export interface ExportRequest {
+  format: ExportFormat;
+  includeMetadata?: boolean;
+  fields?: string[];
+  itemIds?: string[];
+}
