@@ -20,6 +20,11 @@ import {
   ItemQuery,
   MapItemsQuery,
   ItemsResponse,
+  FeedCollection,
+  CreateCollectionRequest,
+  UpdateCollectionRequest,
+  AddFeedsToCollectionRequest,
+  RemoveFeedsFromCollectionRequest,
 } from './rss-types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -271,6 +276,56 @@ class ApiClient {
   // RSS Map Data
   async getMapItems(query?: MapItemsQuery): Promise<RSSItem[]> {
     const response = await this.client.get<RSSItem[]>('/rss/map-items', { params: query });
+    return response.data;
+  }
+
+  // RSS Collection APIs
+  async getCollections(): Promise<FeedCollection[]> {
+    const response = await this.client.get<FeedCollection[]>('/rss/collections');
+    return response.data;
+  }
+
+  async getCollection(id: string): Promise<FeedCollection> {
+    const response = await this.client.get<FeedCollection>(`/rss/collections/${id}`);
+    return response.data;
+  }
+
+  async getDefaultCollection(): Promise<FeedCollection | null> {
+    try {
+      const response = await this.client.get<FeedCollection>('/rss/collections/default');
+      return response.data;
+    } catch (error) {
+      // No default collection found
+      return null;
+    }
+  }
+
+  async createCollection(data: CreateCollectionRequest): Promise<FeedCollection> {
+    const response = await this.client.post<FeedCollection>('/rss/collections', data);
+    return response.data;
+  }
+
+  async updateCollection(id: string, data: UpdateCollectionRequest): Promise<FeedCollection> {
+    const response = await this.client.put<FeedCollection>(`/rss/collections/${id}`, data);
+    return response.data;
+  }
+
+  async deleteCollection(id: string): Promise<void> {
+    await this.client.delete(`/rss/collections/${id}`);
+  }
+
+  async addFeedsToCollection(id: string, data: AddFeedsToCollectionRequest): Promise<FeedCollection> {
+    const response = await this.client.post<FeedCollection>(`/rss/collections/${id}/feeds`, data);
+    return response.data;
+  }
+
+  async removeFeedsFromCollection(id: string, data: RemoveFeedsFromCollectionRequest): Promise<FeedCollection> {
+    const response = await this.client.delete<FeedCollection>(`/rss/collections/${id}/feeds`, { data });
+    return response.data;
+  }
+
+  async getCollectionsByFeed(feedId: string): Promise<FeedCollection[]> {
+    const response = await this.client.get<FeedCollection[]>(`/rss/feeds/${feedId}/collections`);
     return response.data;
   }
 

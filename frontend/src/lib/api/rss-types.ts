@@ -128,3 +128,45 @@ export interface DefaultFeedSource {
   subtype: string;
   description: string;
 }
+
+// Feed Collections
+export interface FeedCollection {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  icon: string | null;
+  isDefault: boolean;
+  sortOrder: number;
+  feeds: RSSFeed[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCollectionRequest {
+  name: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  isDefault?: boolean;
+  sortOrder?: number;
+  feedIds?: string[];
+}
+
+export interface UpdateCollectionRequest {
+  name?: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  isDefault?: boolean;
+  sortOrder?: number;
+}
+
+export interface AddFeedsToCollectionRequest {
+  feedIds: string[];
+}
+
+export interface RemoveFeedsFromCollectionRequest {
+  feedIds: string[];
+}
