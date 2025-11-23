@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { RSSModule } from './modules/rss/rss.module';
 // TODO: Implement these modules
 // import { MapsModule } from './modules/maps/maps.module';
 // import { SatellitesModule } from './modules/satellites/satellites.module';
@@ -38,6 +39,7 @@ import { UsersModule } from './modules/users/users.module';
     // Feature modules
     AuthModule,
     UsersModule,
+    RSSModule,
     // TODO: Add these modules when implemented
     // MapsModule,
     // SatellitesModule,

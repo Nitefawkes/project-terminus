@@ -11,6 +11,16 @@ import {
   CreatePinRequest,
   ApiError,
 } from './types';
+import {
+  RSSFeed,
+  RSSItem,
+  CreateFeedRequest,
+  UpdateFeedRequest,
+  FeedQuery,
+  ItemQuery,
+  MapItemsQuery,
+  ItemsResponse,
+} from './rss-types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -196,6 +206,72 @@ class ApiClient {
 
   async deletePin(id: string): Promise<void> {
     await this.client.delete(`/users/pins/${id}`);
+  }
+
+  // RSS Feed APIs
+  async getFeeds(query?: FeedQuery): Promise<RSSFeed[]> {
+    const response = await this.client.get<RSSFeed[]>('/rss/feeds', { params: query });
+    return response.data;
+  }
+
+  async getFeed(id: string): Promise<RSSFeed> {
+    const response = await this.client.get<RSSFeed>(`/rss/feeds/${id}`);
+    return response.data;
+  }
+
+  async createFeed(data: CreateFeedRequest): Promise<RSSFeed> {
+    const response = await this.client.post<RSSFeed>('/rss/feeds', data);
+    return response.data;
+  }
+
+  async updateFeed(id: string, data: UpdateFeedRequest): Promise<RSSFeed> {
+    const response = await this.client.put<RSSFeed>(`/rss/feeds/${id}`, data);
+    return response.data;
+  }
+
+  async deleteFeed(id: string): Promise<void> {
+    await this.client.delete(`/rss/feeds/${id}`);
+  }
+
+  async refreshFeed(id: string): Promise<{ message: string; newItems: number }> {
+    const response = await this.client.post(`/rss/feeds/${id}/refresh`);
+    return response.data;
+  }
+
+  async refreshAllFeeds(): Promise<{ message: string }> {
+    const response = await this.client.post('/rss/feeds/refresh-all');
+    return response.data;
+  }
+
+  // RSS Item APIs
+  async getItems(query?: ItemQuery): Promise<ItemsResponse> {
+    const response = await this.client.get<ItemsResponse>('/rss/items', { params: query });
+    return response.data;
+  }
+
+  async getItem(id: string): Promise<RSSItem> {
+    const response = await this.client.get<RSSItem>(`/rss/items/${id}`);
+    return response.data;
+  }
+
+  async markItemAsRead(id: string, read: boolean): Promise<RSSItem> {
+    const response = await this.client.put<RSSItem>(`/rss/items/${id}/read`, { read });
+    return response.data;
+  }
+
+  async toggleItemStar(id: string): Promise<RSSItem> {
+    const response = await this.client.put<RSSItem>(`/rss/items/${id}/star`);
+    return response.data;
+  }
+
+  async deleteItem(id: string): Promise<void> {
+    await this.client.delete(`/rss/items/${id}`);
+  }
+
+  // RSS Map Data
+  async getMapItems(query?: MapItemsQuery): Promise<RSSItem[]> {
+    const response = await this.client.get<RSSItem[]>('/rss/map-items', { params: query });
+    return response.data;
   }
 
   // Helper methods
