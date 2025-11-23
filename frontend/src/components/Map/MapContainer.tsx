@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useAppStore } from '@/store/appStore';
+import { useSearchParams } from 'next/navigation';
 import { calculateTerminator, terminatorToGeoJSON } from '@/lib/terminator';
 import { BUILTIN_LAYERS } from '@/lib/layers/types';
 import TimeDisplay from '../TimeDisplay/TimeDisplay';
@@ -12,16 +13,20 @@ import SpaceWeatherPanel from '../SpaceWeather/SpaceWeatherPanel';
 import PropagationPanel from '../SpaceWeather/PropagationPanel';
 import SatellitePanel from '../SpaceWeather/SatellitePanel';
 import { PinManagement } from './PinManagement';
+import { UserMenu } from '../UserMenu/UserMenu';
+import { SettingsPanel } from '../Settings/SettingsPanel';
 import { Clock, Layers as LayersIcon, Maximize2, Minimize2, Activity, Radio, Satellite as SatelliteIcon } from 'lucide-react';
 import { spaceWeatherAPI } from '@/lib/space-weather/api';
 import { satelliteTracker } from '@/lib/space-weather/satellite';
 import { clsx } from 'clsx';
 
 const MapContainer: React.FC = () => {
+  const searchParams = useSearchParams();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  
+  const [showSettings, setShowSettings] = useState(false);
+
   const {
     mapStyle,
     kioskMode,
@@ -39,6 +44,13 @@ const MapContainer: React.FC = () => {
     layers,
     currentTime,
   } = useAppStore();
+
+  // Check for settings query param
+  useEffect(() => {
+    if (searchParams?.get('settings') === 'true') {
+      setShowSettings(true);
+    }
+  }, [searchParams]);
 
   // Initialize map
   useEffect(() => {
@@ -441,7 +453,8 @@ const MapContainer: React.FC = () => {
                 <h1 className="text-2xl font-bold text-white">Project Terminus</h1>
                 <p className="text-sm text-gray-300">Living World Clock & Intelligence Dashboard</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
+                <UserMenu />
                 <button
                   onClick={toggleTimePanel}
                   className={clsx(
@@ -553,6 +566,14 @@ const MapContainer: React.FC = () => {
 
           {/* Pin Management */}
           <PinManagement map={map.current} isLoaded={isLoaded} />
+
+          {/* Settings Panel */}
+          {showSettings && (
+            <SettingsPanel
+              onClose={() => setShowSettings(false)}
+              map={map.current}
+            />
+          )}
         </>
       )}
 
