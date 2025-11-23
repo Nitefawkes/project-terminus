@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
-// import { MapsModule } from './modules/maps/maps.module';
+import { MapsModule } from './modules/maps/maps.module';
 // import { SatellitesModule } from './modules/satellites/satellites.module';
 // import { OsintModule } from './modules/osint/osint.module';
 
@@ -35,11 +36,19 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
     // Scheduler for background tasks
     ScheduleModule.forRoot(),
 
+    // Rate limiting
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // Time to live: 60 seconds
+        limit: 100, // Max 100 requests per minute per user
+      },
+    ]),
+
     // Feature modules
     AuthModule,
     UsersModule,
     RealtimeModule,
-    // MapsModule,
+    MapsModule,
     // SatellitesModule,
     // OsintModule,
   ],
