@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Between, Like, IsNull, Not } from 'typeorm';
 import { RSSFeed } from '../entities/rss-feed.entity';
@@ -24,24 +24,27 @@ export class RSSService {
 
   // ===== Feed Management =====
 
-  async createFeed(createFeedDto: CreateFeedDto): Promise<RSSFeed> {
+  async createFeed(userId: string, createFeedDto: CreateFeedDto): Promise<RSSFeed> {
     // Validate the feed URL
     const isValid = await this.rssParserService.validateFeedUrl(createFeedDto.url);
     if (!isValid) {
       throw new Error('Invalid RSS feed URL or unable to fetch feed');
     }
 
-    const feed = this.feedsRepository.create(createFeedDto);
+    const feed = this.feedsRepository.create({
+      ...createFeedDto,
+      userId,
+    });
     const savedFeed = await this.feedsRepository.save(feed);
 
     // Fetch initial items
-    await this.refreshFeed(savedFeed.id);
+    await this.refreshFeed(userId, savedFeed.id);
 
     return savedFeed;
   }
 
-  async findAllFeeds(query?: FeedQueryDto): Promise<RSSFeed[]> {
-    const where: any = {};
+  async findAllFeeds(userId: string, query?: FeedQueryDto): Promise<RSSFeed[]> {
+    const where: any = { userId };
 
     if (query?.type) {
       where.type = query.type;
@@ -61,9 +64,9 @@ export class RSSService {
     });
   }
 
-  async findOneFeed(id: string): Promise<RSSFeed> {
+  async findOneFeed(userId: string, id: string): Promise<RSSFeed> {
     const feed = await this.feedsRepository.findOne({
-      where: { id },
+      where: { id, userId },
       relations: ['items'],
     });
 
@@ -74,8 +77,8 @@ export class RSSService {
     return feed;
   }
 
-  async updateFeed(id: string, updateFeedDto: UpdateFeedDto): Promise<RSSFeed> {
-    const feed = await this.findOneFeed(id);
+  async updateFeed(userId: string, id: string, updateFeedDto: UpdateFeedDto): Promise<RSSFeed> {
+    const feed = await this.findOneFeed(userId, id);
 
     // If URL is being updated, validate it
     if (updateFeedDto.url && updateFeedDto.url !== feed.url) {
@@ -89,15 +92,15 @@ export class RSSService {
     return this.feedsRepository.save(feed);
   }
 
-  async removeFeed(id: string): Promise<void> {
-    const feed = await this.findOneFeed(id);
+  async removeFeed(userId: string, id: string): Promise<void> {
+    const feed = await this.findOneFeed(userId, id);
     await this.feedsRepository.remove(feed);
   }
 
   // ===== Feed Refresh =====
 
-  async refreshFeed(id: string): Promise<number> {
-    const feed = await this.findOneFeed(id);
+  async refreshFeed(userId: string, id: string): Promise<number> {
+    const feed = await this.findOneFeed(userId, id);
 
     try {
       this.logger.log(`Refreshing feed: ${feed.name}`);
@@ -170,33 +173,55 @@ export class RSSService {
     }
   }
 
-  async refreshAllFeeds(): Promise<void> {
-    const feeds = await this.feedsRepository.find({ where: { enabled: true } });
+  async refreshAllFeeds(userId: string): Promise<void> {
+    const feeds = await this.feedsRepository.find({
+      where: { userId, enabled: true }
+    });
 
-    this.logger.log(`Refreshing ${feeds.length} feeds...`);
+    this.logger.log(`Refreshing ${feeds.length} feeds for user ${userId}...`);
 
     for (const feed of feeds) {
       try {
-        await this.refreshFeed(feed.id);
+        await this.refreshFeed(userId, feed.id);
       } catch (error) {
         // Continue to next feed on error
         this.logger.error(`Error refreshing feed ${feed.id}: ${error.message}`);
       }
     }
 
-    this.logger.log('All feeds refreshed');
+    this.logger.log(`All feeds refreshed for user ${userId}`);
   }
 
   // ===== Item Management =====
 
-  async findAllItems(query: ItemQueryDto): Promise<{ items: RSSItem[]; total: number }> {
+  async findAllItems(userId: string, query: ItemQueryDto): Promise<{ items: RSSItem[]; total: number }> {
     const where: any = {};
     const limit = query.limit || 50;
     const offset = query.offset || 0;
 
-    // Filter by feed IDs
+    // Get user's feed IDs first to scope items to user
+    const userFeeds = await this.feedsRepository.find({
+      where: { userId },
+      select: ['id']
+    });
+    const userFeedIds = userFeeds.map(f => f.id);
+
+    if (userFeedIds.length === 0) {
+      return { items: [], total: 0 };
+    }
+
+    // Start with user's feeds
+    where.feedId = In(userFeedIds);
+
+    // Further filter by specific feed IDs if provided
     if (query.feedIds && query.feedIds.length > 0) {
-      where.feedId = In(query.feedIds);
+      // Intersect with user's feeds for security
+      const allowedFeedIds = query.feedIds.filter(id => userFeedIds.includes(id));
+      if (allowedFeedIds.length > 0) {
+        where.feedId = In(allowedFeedIds);
+      } else {
+        return { items: [], total: 0 };
+      }
     }
 
     // Filter by geocoded status
@@ -230,7 +255,7 @@ export class RSSService {
 
     // Get feeds matching type/subtype filters
     if (query.types || query.subtypes) {
-      const feedWhere: any = {};
+      const feedWhere: any = { userId };
       if (query.types) {
         feedWhere.type = In(query.types);
       }
@@ -260,7 +285,7 @@ export class RSSService {
     return { items, total };
   }
 
-  async findOneItem(id: string): Promise<RSSItem> {
+  async findOneItem(userId: string, id: string): Promise<RSSItem> {
     const item = await this.itemsRepository.findOne({
       where: { id },
       relations: ['feed'],
@@ -270,38 +295,56 @@ export class RSSService {
       throw new NotFoundException(`Item with ID ${id} not found`);
     }
 
+    // Verify user owns the feed
+    if (item.feed.userId !== userId) {
+      throw new ForbiddenException('Access denied to this item');
+    }
+
     return item;
   }
 
-  async markAsRead(id: string, read: boolean): Promise<RSSItem> {
-    const item = await this.findOneItem(id);
+  async markAsRead(userId: string, id: string, read: boolean): Promise<RSSItem> {
+    const item = await this.findOneItem(userId, id);
     item.read = read;
     return this.itemsRepository.save(item);
   }
 
-  async toggleStar(id: string): Promise<RSSItem> {
-    const item = await this.findOneItem(id);
+  async toggleStar(userId: string, id: string): Promise<RSSItem> {
+    const item = await this.findOneItem(userId, id);
     item.starred = !item.starred;
     return this.itemsRepository.save(item);
   }
 
-  async removeItem(id: string): Promise<void> {
-    const item = await this.findOneItem(id);
+  async removeItem(userId: string, id: string): Promise<void> {
+    const item = await this.findOneItem(userId, id);
     await this.itemsRepository.remove(item);
   }
 
   // ===== Map Data =====
 
-  async getMapItems(query: MapItemsQueryDto): Promise<RSSItem[]> {
+  async getMapItems(userId: string, query: MapItemsQueryDto): Promise<RSSItem[]> {
     const where: any = {
       geocoded: true,
       latitude: Not(IsNull()),
       longitude: Not(IsNull()),
     };
 
+    // Get user's feeds
+    const userFeeds = await this.feedsRepository.find({
+      where: { userId },
+      select: ['id']
+    });
+    const userFeedIds = userFeeds.map(f => f.id);
+
+    if (userFeedIds.length === 0) {
+      return [];
+    }
+
+    where.feedId = In(userFeedIds);
+
     // Apply filters
     if (query.types || query.subtypes) {
-      const feedWhere: any = {};
+      const feedWhere: any = { userId };
       if (query.types) {
         feedWhere.type = In(query.types);
       }
@@ -345,5 +388,42 @@ export class RSSService {
     }
 
     return items;
+  }
+
+  // ===== Statistics =====
+
+  async getStats(userId: string): Promise<{
+    totalFeeds: number;
+    totalItems: number;
+    geocodedItems: number;
+    unreadItems: number;
+  }> {
+    const userFeeds = await this.feedsRepository.find({
+      where: { userId },
+      select: ['id']
+    });
+    const userFeedIds = userFeeds.map(f => f.id);
+
+    if (userFeedIds.length === 0) {
+      return {
+        totalFeeds: 0,
+        totalItems: 0,
+        geocodedItems: 0,
+        unreadItems: 0,
+      };
+    }
+
+    const [totalItems, geocodedItems, unreadItems] = await Promise.all([
+      this.itemsRepository.count({ where: { feedId: In(userFeedIds) } }),
+      this.itemsRepository.count({ where: { feedId: In(userFeedIds), geocoded: true } }),
+      this.itemsRepository.count({ where: { feedId: In(userFeedIds), read: false } }),
+    ]);
+
+    return {
+      totalFeeds: userFeeds.length,
+      totalItems,
+      geocodedItems,
+      unreadItems,
+    };
   }
 }

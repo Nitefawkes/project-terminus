@@ -5,8 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { RSSItem } from './rss-item.entity';
+import { User } from '../../users/entities/user.entity';
 
 export enum FeedType {
   NEWS = 'news',
@@ -25,6 +28,13 @@ export enum FeedType {
 export class RSSFeed {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({ name: 'user_id' })
+  userId: string;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 
   @Column()
   url: string;
