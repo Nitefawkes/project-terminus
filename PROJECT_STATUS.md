@@ -73,6 +73,7 @@ A comprehensive RSS feed aggregation system was designed, developed, and integra
 - ✅ All dependencies installed
 - ✅ PostgreSQL + PostGIS ready
 - ✅ Environment configuration complete
+- ✅ Migration infrastructure configured
 
 ### Frontend Components
 
@@ -104,6 +105,8 @@ project-terminus/
 │   ├── src/
 │   │   ├── modules/
 │   │   │   ├── auth/          ✅ Complete
+│   │   │   │   └── decorators/
+│   │   │   │       └── get-user.decorator.ts ✅ New
 │   │   │   ├── users/         ✅ Complete
 │   │   │   └── rss/           ✅ Complete (NEW)
 │   │   │       ├── entities/
@@ -112,6 +115,10 @@ project-terminus/
 │   │   │       ├── rss.controller.ts
 │   │   │       ├── rss.module.ts
 │   │   │       └── rss.scheduler.ts
+│   │   ├── database/          ✅ New
+│   │   │   ├── migrations/    ✅ Migration files
+│   │   │   ├── data-source.ts ✅ TypeORM config
+│   │   │   └── README.md      ✅ Migration docs
 │   │   └── app.module.ts
 │   ├── .env.example           ✅ Created
 │   └── package.json
@@ -157,7 +164,10 @@ project-terminus/
 │
 ├── BUG_FIXES.md               ✅ Complete
 ├── BLOCKER_FIXES.md           ✅ Complete
+├── DATABASE_MIGRATION_GUIDE.md ✅ Complete (NEW)
 ├── INTEGRATION_TEST_REPORT.md ✅ Complete
+├── TESTING_STRATEGY.md        ✅ Complete
+├── USER_SCOPING_IMPLEMENTATION.md ✅ Complete (NEW)
 └── README.md
 ```
 
@@ -454,7 +464,7 @@ ee4c7f7 - Add comprehensive project status documentation
 2. ✅ Fix critical bugs - **DONE**
 3. ✅ Create test plan - **DONE**
 4. ✅ Implement user scoping - **DONE**
-5. ⏳ Create database migration for userId
+5. ✅ Create database migration infrastructure - **DONE**
 6. ⏳ Execute manual testing
 7. ⏳ Fix any bugs found in testing
 
@@ -498,6 +508,8 @@ ee4c7f7 - Add comprehensive project status documentation
 - [x] RSS_INTEGRATION_TEST_PLAN.md - Testing guide
 - [x] TESTING_STRATEGY.md - Comprehensive testing approach
 - [x] USER_SCOPING_IMPLEMENTATION.md - Multi-tenant security
+- [x] DATABASE_MIGRATION_GUIDE.md - Migration infrastructure
+- [x] backend/src/database/README.md - Detailed migration docs
 - [x] PROJECT_STATUS.md - This document
 
 ### Needed
