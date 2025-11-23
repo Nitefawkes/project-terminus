@@ -94,6 +94,7 @@ export interface Pin {
   description?: string;
   latitude: number;
   longitude: number;
+  category?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -103,6 +104,7 @@ export interface CreatePinRequest {
   description?: string;
   latitude: number;
   longitude: number;
+  category?: string;
 }
 
 export interface UpdatePinRequest {
@@ -110,6 +112,7 @@ export interface UpdatePinRequest {
   description?: string;
   latitude?: number;
   longitude?: number;
+  category?: string;
 }
 
 // ============================================================================

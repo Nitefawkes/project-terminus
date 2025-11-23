@@ -5,6 +5,7 @@
 
 import maplibregl from 'maplibre-gl';
 import { Pin } from '@/lib/api';
+import { getCategoryColor, getCategoryName } from '@/lib/pin-categories';
 
 // Store marker instances for cleanup
 const pinMarkers = new Map<string, maplibregl.Marker>();
@@ -29,18 +30,29 @@ export function initializePinsLayer(map: maplibregl.Map) {
  * Create a custom marker element for pins
  */
 function createPinMarker(pin: Pin): HTMLDivElement {
+  const color = getCategoryColor(pin.category);
+
   const el = document.createElement('div');
   el.className = 'custom-pin-marker';
   el.style.cssText = `
     width: 30px;
     height: 30px;
-    background-color: #3b82f6;
+    background-color: ${color};
     border: 2px solid #ffffff;
     border-radius: 50% 50% 50% 0;
     transform: rotate(-45deg);
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    transition: transform 0.2s ease;
   `;
+
+  // Add hover effect
+  el.onmouseenter = () => {
+    el.style.transform = 'rotate(-45deg) scale(1.1)';
+  };
+  el.onmouseleave = () => {
+    el.style.transform = 'rotate(-45deg) scale(1)';
+  };
 
   // Add inner dot
   const innerDot = document.createElement('div');
@@ -63,6 +75,9 @@ function createPinMarker(pin: Pin): HTMLDivElement {
  * Create a popup for a pin
  */
 function createPinPopup(pin: Pin, onDelete?: (id: string) => void): maplibregl.Popup {
+  const categoryName = getCategoryName(pin.category);
+  const categoryColor = getCategoryColor(pin.category);
+
   const deleteButton = onDelete
     ? `<button
         class="mt-2 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition"
@@ -74,6 +89,10 @@ function createPinPopup(pin: Pin, onDelete?: (id: string) => void): maplibregl.P
 
   const popupContent = `
     <div class="pin-popup" style="min-width: 150px;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <div style="width: 12px; height: 12px; background-color: ${categoryColor}; border-radius: 50%;"></div>
+        <span style="font-size: 11px; color: #9ca3af; text-transform: uppercase;">${categoryName}</span>
+      </div>
       <h3 style="font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #ffffff;">
         ${pin.name}
       </h3>
