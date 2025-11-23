@@ -35,7 +35,9 @@ interface AppState {
   togglePropagation: () => void;
   showSatellite: boolean;
   toggleSatellite: () => void;
-  
+  showRSS: boolean;
+  toggleRSS: () => void;
+
   // User preferences
   userLocation: { lat: number; lng: number } | null;
   setUserLocation: (location: { lat: number; lng: number }) => void;
@@ -116,7 +118,9 @@ export const useAppStore = create<AppState>((set) => ({
   togglePropagation: () => set((state) => ({ showPropagation: !state.showPropagation })),
   showSatellite: false,
   toggleSatellite: () => set((state) => ({ showSatellite: !state.showSatellite })),
-  
+  showRSS: false,
+  toggleRSS: () => set((state) => ({ showRSS: !state.showRSS })),
+
   // User preferences
   userLocation: null,
   setUserLocation: (location) => set({ userLocation: location }),

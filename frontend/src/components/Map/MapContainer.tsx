@@ -11,8 +11,11 @@ import LayerPanel from '../LayerPanel/LayerPanel';
 import SpaceWeatherPanel from '../SpaceWeather/SpaceWeatherPanel';
 import PropagationPanel from '../SpaceWeather/PropagationPanel';
 import SatellitePanel from '../SpaceWeather/SatellitePanel';
+import RSSPanel from '../RSS/RSSPanel';
+import RSSLayer from './RSSLayer';
 import UserMenu from '../UserMenu/UserMenu';
-import { Clock, Layers as LayersIcon, Maximize2, Minimize2, Activity, Radio, Satellite as SatelliteIcon } from 'lucide-react';
+import { Clock, Layers as LayersIcon, Maximize2, Minimize2, Activity, Radio, Satellite as SatelliteIcon, Rss } from 'lucide-react';
+import { useRSSStore } from '@/store/rssStore';
 import { spaceWeatherAPI } from '@/lib/space-weather/api';
 import { satelliteTracker } from '@/lib/space-weather/satellite';
 import { clsx } from 'clsx';
@@ -36,9 +39,13 @@ const MapContainer: React.FC = () => {
     togglePropagation,
     showSatellite,
     toggleSatellite,
+    showRSS,
+    toggleRSS,
     layers,
     currentTime,
   } = useAppStore();
+
+  const { mapItems } = useRSSStore();
 
   // Initialize map
   useEffect(() => {
@@ -494,6 +501,19 @@ const MapContainer: React.FC = () => {
                   <span className="hidden lg:inline">ISS</span>
                 </button>
                 <button
+                  onClick={toggleRSS}
+                  className={clsx(
+                    'px-4 py-2 rounded-lg flex items-center gap-2 transition-all',
+                    showRSS
+                      ? 'bg-orange-600 text-white'
+                      : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700'
+                  )}
+                  title="RSS News Feeds"
+                >
+                  <Rss className="w-4 h-4" />
+                  <span className="hidden lg:inline">RSS</span>
+                </button>
+                <button
                   onClick={toggleLayerPanel}
                   className={clsx(
                     'px-4 py-2 rounded-lg flex items-center gap-2 transition-all',
@@ -546,12 +566,22 @@ const MapContainer: React.FC = () => {
             </div>
           )}
 
+          {/* RSS Panel */}
+          {showRSS && (
+            <div className="absolute top-24 right-4 z-20">
+              <RSSPanel onClose={toggleRSS} />
+            </div>
+          )}
+
           {/* Layer Panel */}
           {showLayerPanel && (
             <div className="absolute top-24 right-4 z-20">
               <LayerPanel />
             </div>
           )}
+
+          {/* RSS Map Layer */}
+          <RSSLayer map={map.current} items={mapItems} />
         </>
       )}
 
