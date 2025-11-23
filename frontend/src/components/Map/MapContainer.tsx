@@ -11,7 +11,7 @@ import TimeDisplay from '../TimeDisplay/TimeDisplay';
 import LayerPanel from '../LayerPanel/LayerPanel';
 import SpaceWeatherPanel from '../SpaceWeather/SpaceWeatherPanel';
 import PropagationPanel from '../SpaceWeather/PropagationPanel';
-import SatellitePanel from '../SpaceWeather/SatellitePanel';
+import { SatelliteTracker } from '../Satellites/SatelliteTracker';
 import { PinManagement } from './PinManagement';
 import { UserMenu } from '../UserMenu/UserMenu';
 import { SettingsPanel } from '../Settings/SettingsPanel';
@@ -568,10 +568,10 @@ const MapContainer: React.FC = () => {
                       ? 'bg-green-600 text-white'
                       : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700'
                   )}
-                  title="ISS Tracking"
+                  title="Satellite Tracking"
                 >
                   <SatelliteIcon className="w-4 h-4" />
-                  <span className="hidden lg:inline">ISS</span>
+                  <span className="hidden lg:inline">Satellites</span>
                 </button>
                 <button
                   onClick={toggleLayerPanel}
@@ -617,10 +617,21 @@ const MapContainer: React.FC = () => {
             </div>
           )}
 
-          {/* Satellite Panel */}
+          {/* Satellite Tracker */}
           {showSatellite && (
-            <div className="absolute top-24 right-4 z-20">
-              <SatellitePanel />
+            <div className="absolute top-24 right-4 z-20 max-w-md">
+              <SatelliteTracker
+                onSatelliteSelect={(satellite) => {
+                  if (map.current) {
+                    map.current.flyTo({
+                      center: [satellite.longitude, satellite.latitude],
+                      zoom: 5,
+                      duration: 2000,
+                    });
+                  }
+                }}
+                onClose={() => toggleSatellite()}
+              />
             </div>
           )}
 

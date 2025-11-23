@@ -25,6 +25,12 @@ CREATE TABLE IF NOT EXISTS user_preferences (
     default_zoom DECIMAL(4,2) DEFAULT 2.0,
     default_center JSONB,
     enabled_layers JSONB DEFAULT '[]'::jsonb,
+    observer_name VARCHAR(255),
+    observer_latitude DECIMAL(10,7),
+    observer_longitude DECIMAL(10,7),
+    observer_altitude INTEGER,
+    favorite_satellites JSONB DEFAULT '[]'::jsonb,
+    notification_preferences JSONB DEFAULT '{}'::jsonb,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(user_id)
@@ -38,6 +44,7 @@ CREATE TABLE IF NOT EXISTS pins (
     description TEXT,
     latitude DECIMAL(10,7) NOT NULL,
     longitude DECIMAL(10,7) NOT NULL,
+    category VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

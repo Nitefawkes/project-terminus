@@ -9,6 +9,8 @@ export { apiClient } from './client';
 // API classes
 export { AuthAPI } from './auth';
 export { UsersAPI } from './users';
+export { MapsAPI } from './maps';
+export { DashboardAPI } from './dashboard';
 
 // Utilities
 export { TokenStorage } from './token-storage';
