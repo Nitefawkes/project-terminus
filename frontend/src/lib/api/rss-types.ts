@@ -186,3 +186,36 @@ export interface ExportRequest {
   fields?: string[];
   itemIds?: string[];
 }
+
+// Saved Searches
+export interface SavedSearch {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  filters: ItemQuery;
+  isDefault: boolean;
+  isPinned: boolean;
+  sortOrder: number;
+  lastUsedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSavedSearchRequest {
+  name: string;
+  description?: string;
+  filters: ItemQuery;
+  isDefault?: boolean;
+  isPinned?: boolean;
+  sortOrder?: number;
+}
+
+export interface UpdateSavedSearchRequest {
+  name?: string;
+  description?: string;
+  filters?: ItemQuery;
+  isDefault?: boolean;
+  isPinned?: boolean;
+  sortOrder?: number;
+}

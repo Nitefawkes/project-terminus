@@ -6,13 +6,15 @@ import { RSSParserService } from './services/rss-parser.service';
 import { GeocodingService } from './services/geocoding.service';
 import { CollectionService } from './services/collection.service';
 import { ExportService } from './services/export.service';
+import { SavedSearchService } from './services/saved-search.service';
 import { RSSScheduler } from './rss.scheduler';
 import { RSSFeed } from './entities/rss-feed.entity';
 import { RSSItem } from './entities/rss-item.entity';
 import { FeedCollection } from './entities/feed-collection.entity';
+import { SavedSearch } from './entities/saved-search.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([RSSFeed, RSSItem, FeedCollection])],
+  imports: [TypeOrmModule.forFeature([RSSFeed, RSSItem, FeedCollection, SavedSearch])],
   controllers: [RSSController],
   providers: [
     RSSService,
@@ -20,8 +22,9 @@ import { FeedCollection } from './entities/feed-collection.entity';
     GeocodingService,
     CollectionService,
     ExportService,
+    SavedSearchService,
     RSSScheduler,
   ],
-  exports: [RSSService, CollectionService, ExportService],
+  exports: [RSSService, CollectionService, ExportService, SavedSearchService],
 })
 export class RSSModule {}

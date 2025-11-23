@@ -16,6 +16,7 @@ import { Response } from 'express';
 import { RSSService } from './services/rss.service';
 import { CollectionService } from './services/collection.service';
 import { ExportService } from './services/export.service';
+import { SavedSearchService } from './services/saved-search.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { CreateFeedDto } from './dto/create-feed.dto';
@@ -28,6 +29,10 @@ import {
   RemoveFeedsFromCollectionDto,
 } from './dto/collection.dto';
 import { ExportItemsDto } from './dto/export.dto';
+import {
+  CreateSavedSearchDto,
+  UpdateSavedSearchDto,
+} from './dto/saved-search.dto';
 
 @Controller('rss')
 @UseGuards(JwtAuthGuard)
@@ -36,6 +41,7 @@ export class RSSController {
     private readonly rssService: RSSService,
     private readonly collectionService: CollectionService,
     private readonly exportService: ExportService,
+    private readonly savedSearchService: SavedSearchService,
   ) {}
 
   // ===== Feed Management =====
@@ -257,5 +263,64 @@ export class RSSController {
     @Param('feedId') feedId: string,
   ) {
     return this.collectionService.findCollectionsByFeed(userId, feedId);
+  }
+
+  // ===== Saved Searches =====
+
+  @Post('searches')
+  async createSavedSearch(
+    @GetUser('id') userId: string,
+    @Body() dto: CreateSavedSearchDto,
+  ) {
+    return this.savedSearchService.createSavedSearch(userId, dto);
+  }
+
+  @Get('searches')
+  async getAllSavedSearches(@GetUser('id') userId: string) {
+    return this.savedSearchService.findAllSavedSearches(userId);
+  }
+
+  @Get('searches/default')
+  async getDefaultSavedSearch(@GetUser('id') userId: string) {
+    return this.savedSearchService.findDefaultSavedSearch(userId);
+  }
+
+  @Get('searches/pinned')
+  async getPinnedSavedSearches(@GetUser('id') userId: string) {
+    return this.savedSearchService.findPinnedSavedSearches(userId);
+  }
+
+  @Get('searches/:id')
+  async getSavedSearch(
+    @GetUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.savedSearchService.findOneSavedSearch(userId, id);
+  }
+
+  @Put('searches/:id')
+  async updateSavedSearch(
+    @GetUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateSavedSearchDto,
+  ) {
+    return this.savedSearchService.updateSavedSearch(userId, id, dto);
+  }
+
+  @Delete('searches/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteSavedSearch(
+    @GetUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    await this.savedSearchService.deleteSavedSearch(userId, id);
+  }
+
+  @Get('searches/:id/apply')
+  async applySavedSearch(
+    @GetUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.savedSearchService.applySavedSearch(userId, id);
   }
 }

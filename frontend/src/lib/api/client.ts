@@ -26,6 +26,9 @@ import {
   AddFeedsToCollectionRequest,
   RemoveFeedsFromCollectionRequest,
   ExportRequest,
+  SavedSearch,
+  CreateSavedSearchRequest,
+  UpdateSavedSearchRequest,
 } from './rss-types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -336,6 +339,51 @@ class ApiClient {
       params: query,
       responseType: 'blob',
     });
+    return response.data;
+  }
+
+  // RSS Saved Search APIs
+  async getSavedSearches(): Promise<SavedSearch[]> {
+    const response = await this.client.get<SavedSearch[]>('/rss/searches');
+    return response.data;
+  }
+
+  async getSavedSearch(id: string): Promise<SavedSearch> {
+    const response = await this.client.get<SavedSearch>(`/rss/searches/${id}`);
+    return response.data;
+  }
+
+  async getDefaultSavedSearch(): Promise<SavedSearch | null> {
+    try {
+      const response = await this.client.get<SavedSearch>('/rss/searches/default');
+      return response.data;
+    } catch (error) {
+      // No default saved search found
+      return null;
+    }
+  }
+
+  async getPinnedSavedSearches(): Promise<SavedSearch[]> {
+    const response = await this.client.get<SavedSearch[]>('/rss/searches/pinned');
+    return response.data;
+  }
+
+  async createSavedSearch(data: CreateSavedSearchRequest): Promise<SavedSearch> {
+    const response = await this.client.post<SavedSearch>('/rss/searches', data);
+    return response.data;
+  }
+
+  async updateSavedSearch(id: string, data: UpdateSavedSearchRequest): Promise<SavedSearch> {
+    const response = await this.client.put<SavedSearch>(`/rss/searches/${id}`, data);
+    return response.data;
+  }
+
+  async deleteSavedSearch(id: string): Promise<void> {
+    await this.client.delete(`/rss/searches/${id}`);
+  }
+
+  async applySavedSearch(id: string): Promise<ItemQuery> {
+    const response = await this.client.get<ItemQuery>(`/rss/searches/${id}/apply`);
     return response.data;
   }
 
