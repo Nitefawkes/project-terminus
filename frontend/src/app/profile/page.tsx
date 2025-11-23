@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { UsersAPI, UpdateProfileRequest, APIException } from '@/lib/api';
 import { User, Mail, Save, ArrowLeft, Check, X } from 'lucide-react';
+import { ObserverLocationSettings } from '@/components/ObserverLocation/ObserverLocationSettings';
 
 export default function ProfilePage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -235,6 +236,11 @@ export default function ProfilePage() {
               )}
             </div>
           </form>
+        </div>
+
+        {/* Observer Location Settings */}
+        <div className="mt-8">
+          <ObserverLocationSettings />
         </div>
       </div>
     </div>

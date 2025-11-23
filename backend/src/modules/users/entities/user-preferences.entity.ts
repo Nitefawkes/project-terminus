@@ -29,6 +29,28 @@ export class UserPreferences {
   @Column({ name: 'enabled_layers', type: 'jsonb', default: [] })
   enabledLayers: string[];
 
+  @Column({ name: 'observer_name', nullable: true })
+  observerName: string | null;
+
+  @Column({ name: 'observer_latitude', type: 'decimal', precision: 10, scale: 7, nullable: true })
+  observerLatitude: number | null;
+
+  @Column({ name: 'observer_longitude', type: 'decimal', precision: 10, scale: 7, nullable: true })
+  observerLongitude: number | null;
+
+  @Column({ name: 'observer_altitude', type: 'integer', nullable: true })
+  observerAltitude: number | null;
+
+  @Column({ name: 'favorite_satellites', type: 'jsonb', default: [] })
+  favoriteSatellites: number[];
+
+  @Column({ name: 'notification_preferences', type: 'jsonb', default: {} })
+  notificationPreferences: {
+    spaceWeather?: boolean;
+    satellitePasses?: boolean;
+    kpThreshold?: number;
+  };
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

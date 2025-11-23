@@ -13,6 +13,7 @@ import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdatePreferencesDto } from './dto/update-preferences.dto';
 import { CreatePinDto } from './dto/create-pin.dto';
+import { UpdateObserverLocationDto } from './dto/update-observer-location.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('users')
@@ -58,6 +59,45 @@ export class UsersController {
     const userId = req.user.id;
     await this.usersService.deletePin(userId, pinId);
     return { message: 'Pin deleted successfully' };
+  }
+
+  @Put('observer-location')
+  async updateObserverLocation(
+    @Request() req,
+    @Body() updateObserverLocationDto: UpdateObserverLocationDto,
+  ) {
+    const userId = req.user.id;
+    return this.usersService.updateObserverLocation(userId, updateObserverLocationDto);
+  }
+
+  @Get('observer-location')
+  async getObserverLocation(@Request() req) {
+    const userId = req.user.id;
+    return this.usersService.getObserverLocation(userId);
+  }
+
+  @Post('favorites/satellites/:noradId')
+  async addFavoriteSatellite(@Request() req, @Param('noradId') noradId: string) {
+    const userId = req.user.id;
+    return this.usersService.addFavoriteSatellite(userId, parseInt(noradId));
+  }
+
+  @Delete('favorites/satellites/:noradId')
+  async removeFavoriteSatellite(@Request() req, @Param('noradId') noradId: string) {
+    const userId = req.user.id;
+    return this.usersService.removeFavoriteSatellite(userId, parseInt(noradId));
+  }
+
+  @Get('favorites/satellites')
+  async getFavoriteSatellites(@Request() req) {
+    const userId = req.user.id;
+    return this.usersService.getFavoriteSatellites(userId);
+  }
+
+  @Get('dashboard')
+  async getDashboard(@Request() req) {
+    const userId = req.user.id;
+    return this.usersService.getDashboard(userId);
   }
 }
 

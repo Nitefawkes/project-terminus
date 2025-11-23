@@ -8,7 +8,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, Settings, ChevronDown, LogIn, UserPlus } from 'lucide-react';
+import { User, LogOut, Settings, ChevronDown, LogIn, UserPlus, LayoutDashboard } from 'lucide-react';
 
 export function UserMenu() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -97,6 +97,16 @@ export function UserMenu() {
 
           {/* Menu Items */}
           <div className="py-2">
+            <button
+              onClick={() => {
+                router.push('/dashboard');
+                setIsOpen(false);
+              }}
+              className="w-full px-4 py-2 text-left text-white hover:bg-gray-700 transition flex items-center gap-3"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
+            </button>
             <button
               onClick={handleProfile}
               className="w-full px-4 py-2 text-left text-white hover:bg-gray-700 transition flex items-center gap-3"
