@@ -26,6 +26,7 @@ export default function RSSPanel({ onClose }: RSSPanelProps) {
 
   useEffect(() => {
     fetchMapItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleRefresh = async () => {

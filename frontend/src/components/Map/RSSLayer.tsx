@@ -105,6 +105,26 @@ export default function RSSLayer({ map, items, onItemClick }: RSSLayerProps) {
   return null; // This component doesn't render anything
 }
 
+/**
+ * Escape HTML to prevent XSS attacks
+ */
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * Sanitize URL to prevent javascript: protocol attacks
+ */
+function sanitizeUrl(url: string): string {
+  const urlLower = url.toLowerCase().trim();
+  if (urlLower.startsWith('javascript:') || urlLower.startsWith('data:')) {
+    return '#';
+  }
+  return url;
+}
+
 function createPopupContent(item: RSSItem, color?: string): string {
   const timeAgo = formatDistanceToNow(new Date(item.pubDate), { addSuffix: true });
 
@@ -120,20 +140,20 @@ function createPopupContent(item: RSSItem, color?: string): string {
       <!-- Feed Name -->
       ${
         item.feed
-          ? `<div style="font-size: 11px; color: #9CA3AF; margin-bottom: 4px;">${item.feed.name}</div>`
+          ? `<div style="font-size: 11px; color: #9CA3AF; margin-bottom: 4px;">${escapeHtml(item.feed.name)}</div>`
           : ''
       }
 
       <!-- Title -->
       <div style="font-size: 14px; font-weight: 600; color: #F3F4F6; margin-bottom: 6px; line-height: 1.3;">
-        ${item.title}
+        ${escapeHtml(item.title)}
       </div>
 
       <!-- Description -->
       ${
         item.contentSnippet
           ? `<div style="font-size: 12px; color: #D1D5DB; margin-bottom: 8px; line-height: 1.4; max-height: 60px; overflow: hidden;">
-            ${item.contentSnippet.substring(0, 150)}${item.contentSnippet.length > 150 ? '...' : ''}
+            ${escapeHtml(item.contentSnippet.substring(0, 150))}${item.contentSnippet.length > 150 ? '...' : ''}
           </div>`
           : ''
       }
@@ -142,20 +162,20 @@ function createPopupContent(item: RSSItem, color?: string): string {
       ${
         item.location
           ? `<div style="font-size: 11px; color: #9CA3AF; margin-bottom: 4px;">
-            📍 ${item.location}
+            📍 ${escapeHtml(item.location)}
           </div>`
           : ''
       }
 
       <!-- Metadata -->
       <div style="font-size: 11px; color: #6B7280; margin-bottom: 8px;">
-        ${timeAgo}${item.author ? ` • ${item.author}` : ''}
+        ${escapeHtml(timeAgo)}${item.author ? ` • ${escapeHtml(item.author)}` : ''}
       </div>
 
       <!-- Actions -->
       <div style="display: flex; gap: 6px; padding-top: 8px; border-top: 1px solid #374151;">
         <a
-          href="${item.link}"
+          href="${sanitizeUrl(item.link)}"
           target="_blank"
           rel="noopener noreferrer"
           style="
