@@ -18,6 +18,7 @@ import { SettingsPanel } from '../Settings/SettingsPanel';
 import { Clock, Layers as LayersIcon, Maximize2, Minimize2, Activity, Radio, Satellite as SatelliteIcon } from 'lucide-react';
 import { spaceWeatherAPI } from '@/lib/space-weather/api';
 import { satelliteTracker } from '@/lib/space-weather/satellite';
+import { useRealtime } from '@/hooks/useRealtime';
 import { clsx } from 'clsx';
 
 const MapContainer: React.FC = () => {
@@ -45,12 +46,29 @@ const MapContainer: React.FC = () => {
     currentTime,
   } = useAppStore();
 
+  // Real-time WebSocket connection
+  const {
+    isConnected,
+    satelliteData,
+    spaceWeatherData,
+    terminatorData,
+    subscribe,
+  } = useRealtime();
+
   // Check for settings query param
   useEffect(() => {
     if (searchParams?.get('settings') === 'true') {
       setShowSettings(true);
     }
   }, [searchParams]);
+
+  // Subscribe to real-time channels when connected
+  useEffect(() => {
+    if (isConnected) {
+      subscribe(['satellites', 'space-weather', 'terminator']);
+      console.log('Subscribed to real-time channels');
+    }
+  }, [isConnected, subscribe]);
 
   // Initialize map
   useEffect(() => {
@@ -422,6 +440,55 @@ const MapContainer: React.FC = () => {
       updateTerminator(map.current);
     }
   }, [currentTime, isLoaded]);
+
+  // Update ISS position from WebSocket
+  useEffect(() => {
+    if (map.current && isLoaded && satelliteData) {
+      const issPoint = {
+        type: 'Feature' as const,
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [satelliteData.longitude, satelliteData.latitude],
+        },
+        properties: {
+          name: satelliteData.name,
+          altitude: satelliteData.altitude,
+        },
+      };
+
+      const source = map.current.getSource('iss-position') as maplibregl.GeoJSONSource;
+      if (source) {
+        source.setData(issPoint as any);
+        console.log('Updated ISS position from WebSocket:', satelliteData);
+      }
+    }
+  }, [satelliteData, isLoaded]);
+
+  // Update terminator from WebSocket
+  useEffect(() => {
+    if (map.current && isLoaded && terminatorData) {
+      // Update terminator line
+      const source = map.current.getSource('terminator') as maplibregl.GeoJSONSource;
+      if (source) {
+        source.setData(terminatorData as any);
+        console.log('Updated terminator from WebSocket');
+      }
+
+      // Update night shade if using GeoJSON format
+      const nightSource = map.current.getSource('night-shade') as maplibregl.GeoJSONSource;
+      if (nightSource && terminatorData.features && terminatorData.features.length > 0) {
+        nightSource.setData(terminatorData as any);
+      }
+    }
+  }, [terminatorData, isLoaded]);
+
+  // Log space weather updates from WebSocket
+  useEffect(() => {
+    if (spaceWeatherData) {
+      console.log('Received space weather update from WebSocket:', spaceWeatherData);
+      // The SpaceWeatherPanel component will handle displaying this data
+    }
+  }, [spaceWeatherData]);
 
   return (
     <div className="relative w-full h-full bg-gray-900">

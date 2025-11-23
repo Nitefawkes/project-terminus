@@ -6,9 +6,10 @@ import { ScheduleModule } from '@nestjs/schedule';
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-import { MapsModule } from './modules/maps/maps.module';
-import { SatellitesModule } from './modules/satellites/satellites.module';
-import { OsintModule } from './modules/osint/osint.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
+// import { MapsModule } from './modules/maps/maps.module';
+// import { SatellitesModule } from './modules/satellites/satellites.module';
+// import { OsintModule } from './modules/osint/osint.module';
 
 @Module({
   imports: [
@@ -37,9 +38,10 @@ import { OsintModule } from './modules/osint/osint.module';
     // Feature modules
     AuthModule,
     UsersModule,
-    MapsModule,
-    SatellitesModule,
-    OsintModule,
+    RealtimeModule,
+    // MapsModule,
+    // SatellitesModule,
+    // OsintModule,
   ],
 })
 export class AppModule {}
