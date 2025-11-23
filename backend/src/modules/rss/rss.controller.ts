@@ -12,16 +12,26 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { RSSService } from './services/rss.service';
+import { CollectionService } from './services/collection.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { CreateFeedDto } from './dto/create-feed.dto';
 import { UpdateFeedDto } from './dto/update-feed.dto';
 import { FeedQueryDto, ItemQueryDto, MapItemsQueryDto } from './dto/feed-query.dto';
+import {
+  CreateCollectionDto,
+  UpdateCollectionDto,
+  AddFeedsToCollectionDto,
+  RemoveFeedsFromCollectionDto,
+} from './dto/collection.dto';
 
 @Controller('rss')
 @UseGuards(JwtAuthGuard)
 export class RSSController {
-  constructor(private readonly rssService: RSSService) {}
+  constructor(
+    private readonly rssService: RSSService,
+    private readonly collectionService: CollectionService,
+  ) {}
 
   // ===== Feed Management =====
 
@@ -126,5 +136,77 @@ export class RSSController {
   @Get('stats')
   async getStats(@GetUser('id') userId: string) {
     return this.rssService.getStats(userId);
+  }
+
+  // ===== Feed Collections =====
+
+  @Post('collections')
+  async createCollection(
+    @GetUser('id') userId: string,
+    @Body() dto: CreateCollectionDto,
+  ) {
+    return this.collectionService.createCollection(userId, dto);
+  }
+
+  @Get('collections')
+  async getAllCollections(@GetUser('id') userId: string) {
+    return this.collectionService.findAllCollections(userId);
+  }
+
+  @Get('collections/default')
+  async getDefaultCollection(@GetUser('id') userId: string) {
+    return this.collectionService.findDefaultCollection(userId);
+  }
+
+  @Get('collections/:id')
+  async getCollection(
+    @GetUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    return this.collectionService.findOneCollection(userId, id);
+  }
+
+  @Put('collections/:id')
+  async updateCollection(
+    @GetUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateCollectionDto,
+  ) {
+    return this.collectionService.updateCollection(userId, id, dto);
+  }
+
+  @Delete('collections/:id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteCollection(
+    @GetUser('id') userId: string,
+    @Param('id') id: string,
+  ) {
+    await this.collectionService.deleteCollection(userId, id);
+  }
+
+  @Post('collections/:id/feeds')
+  async addFeedsToCollection(
+    @GetUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: AddFeedsToCollectionDto,
+  ) {
+    return this.collectionService.addFeedsToCollection(userId, id, dto);
+  }
+
+  @Delete('collections/:id/feeds')
+  async removeFeedsFromCollection(
+    @GetUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: RemoveFeedsFromCollectionDto,
+  ) {
+    return this.collectionService.removeFeedsFromCollection(userId, id, dto);
+  }
+
+  @Get('feeds/:feedId/collections')
+  async getCollectionsByFeed(
+    @GetUser('id') userId: string,
+    @Param('feedId') feedId: string,
+  ) {
+    return this.collectionService.findCollectionsByFeed(userId, feedId);
   }
 }
