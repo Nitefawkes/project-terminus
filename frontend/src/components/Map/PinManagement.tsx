@@ -11,7 +11,7 @@ import { usePins } from '@/hooks/usePins';
 import { useAuth } from '@/contexts/AuthContext';
 import { initializePinsLayer, updatePins, cleanupPins } from '@/lib/map/pins';
 import { PIN_CATEGORIES, getCategoryColor, DEFAULT_CATEGORY } from '@/lib/pin-categories';
-import { MapPin, Plus, X, Filter, Edit2 } from 'lucide-react';
+import { MapPin, Plus, X, Filter, Edit2, Search } from 'lucide-react';
 
 interface PinManagementProps {
   map: maplibregl.Map | null;
@@ -26,6 +26,7 @@ export function PinManagement({ map, isLoaded }: PinManagementProps) {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [editingPinId, setEditingPinId] = useState<string | null>(null);
   const [editCategory, setEditCategory] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Initialize pins layer when map loads
   useEffect(() => {
@@ -124,10 +125,34 @@ export function PinManagement({ map, isLoaded }: PinManagementProps) {
     setEditCategory('');
   };
 
-  // Filter pins by category
-  const filteredPins = selectedCategory
-    ? pins.filter((pin) => pin.category === selectedCategory)
-    : pins;
+  // Highlight search term in text
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim()) return text;
+
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return parts.map((part, index) =>
+      part.toLowerCase() === query.toLowerCase()
+        ? <mark key={index} className="bg-yellow-500/30 text-yellow-200">{part}</mark>
+        : part
+    );
+  };
+
+  // Filter pins by category and search query
+  const filteredPins = pins
+    .filter((pin) => {
+      // Category filter
+      if (selectedCategory && pin.category !== selectedCategory) {
+        return false;
+      }
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const nameMatch = pin.name.toLowerCase().includes(query);
+        const descMatch = pin.description?.toLowerCase().includes(query);
+        return nameMatch || descMatch;
+      }
+      return true;
+    });
 
   // Get category counts
   const categoryCounts = pins.reduce((acc, pin) => {
@@ -202,6 +227,34 @@ export function PinManagement({ map, isLoaded }: PinManagementProps) {
             </div>
           )}
 
+          {/* Search */}
+          <div className="mb-3">
+            <div className="relative">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search pins by name or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-10 py-2 bg-gray-700 text-white text-sm rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition"
+                  title="Clear search"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <div className="mt-1 text-xs text-gray-400">
+                Found {filteredPins.length} result{filteredPins.length !== 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
+
           {/* Category Filter */}
           <div className="mb-3">
             <div className="flex items-center gap-2 mb-2">
@@ -249,7 +302,9 @@ export function PinManagement({ map, isLoaded }: PinManagementProps) {
           {/* Pins List */}
           {filteredPins.length === 0 ? (
             <p className="text-gray-400 text-sm text-center py-4">
-              {selectedCategory
+              {searchQuery
+                ? `No pins found matching "${searchQuery}"`
+                : selectedCategory
                 ? 'No pins in this category'
                 : 'No pins yet. Click the + button to add one.'}
             </p>
@@ -282,10 +337,14 @@ export function PinManagement({ map, isLoaded }: PinManagementProps) {
                             className="w-3 h-3 rounded-full"
                             style={{ backgroundColor: getCategoryColor(pin.category) }}
                           />
-                          <p className="text-white text-sm font-medium">{pin.name}</p>
+                          <p className="text-white text-sm font-medium">
+                            {highlightText(pin.name, searchQuery)}
+                          </p>
                         </div>
                         {pin.description && (
-                          <p className="text-gray-400 text-xs mt-1">{pin.description}</p>
+                          <p className="text-gray-400 text-xs mt-1">
+                            {highlightText(pin.description, searchQuery)}
+                          </p>
                         )}
                         <div className="flex items-center gap-2 mt-1">
                           <CategoryIcon className="w-3 h-3 text-gray-500" />
