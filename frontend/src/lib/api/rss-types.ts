@@ -87,6 +87,9 @@ export interface ItemQuery {
   since?: string;
   until?: string;
   search?: string;
+  nearLat?: number;
+  nearLng?: number;
+  radiusKm?: number;
   limit?: number;
   offset?: number;
 }

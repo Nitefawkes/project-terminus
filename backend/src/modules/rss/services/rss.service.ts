@@ -195,7 +195,6 @@ export class RSSService {
   // ===== Item Management =====
 
   async findAllItems(userId: string, query: ItemQueryDto): Promise<{ items: RSSItem[]; total: number }> {
-    const where: any = {};
     const limit = query.limit || 50;
     const offset = query.offset || 0;
 
@@ -210,47 +209,68 @@ export class RSSService {
       return { items: [], total: 0 };
     }
 
-    // Start with user's feeds
-    where.feedId = In(userFeedIds);
+    // Build query with QueryBuilder for geospatial support
+    const queryBuilder = this.itemsRepository
+      .createQueryBuilder('item')
+      .leftJoinAndSelect('item.feed', 'feed')
+      .where('item.feedId IN (:...userFeedIds)', { userFeedIds });
 
     // Further filter by specific feed IDs if provided
     if (query.feedIds && query.feedIds.length > 0) {
-      // Intersect with user's feeds for security
       const allowedFeedIds = query.feedIds.filter(id => userFeedIds.includes(id));
-      if (allowedFeedIds.length > 0) {
-        where.feedId = In(allowedFeedIds);
-      } else {
+      if (allowedFeedIds.length === 0) {
         return { items: [], total: 0 };
       }
+      queryBuilder.andWhere('item.feedId IN (:...feedIds)', { feedIds: allowedFeedIds });
     }
 
     // Filter by geocoded status
     if (query.geocoded !== undefined) {
-      where.geocoded = query.geocoded;
+      queryBuilder.andWhere('item.geocoded = :geocoded', { geocoded: query.geocoded });
     }
 
     // Filter by read status
     if (query.read !== undefined) {
-      where.read = query.read;
+      queryBuilder.andWhere('item.read = :read', { read: query.read });
     }
 
     // Filter by starred status
     if (query.starred !== undefined) {
-      where.starred = query.starred;
+      queryBuilder.andWhere('item.starred = :starred', { starred: query.starred });
     }
 
     // Filter by date range
-    if (query.since || query.until) {
-      const dateFilter: any = {};
-      if (query.since) {
-        dateFilter.pubDate = Between(new Date(query.since), query.until ? new Date(query.until) : new Date());
-      }
-      where.pubDate = dateFilter.pubDate;
+    if (query.since) {
+      queryBuilder.andWhere('item.pubDate >= :since', { since: new Date(query.since) });
+    }
+    if (query.until) {
+      queryBuilder.andWhere('item.pubDate <= :until', { until: new Date(query.until) });
     }
 
     // Search in title/description
     if (query.search) {
-      where.title = Like(`%${query.search}%`);
+      queryBuilder.andWhere(
+        '(item.title ILIKE :search OR item.description ILIKE :search)',
+        { search: `%${query.search}%` }
+      );
+    }
+
+    // Geospatial filtering (distance from point)
+    if (query.nearLat !== undefined && query.nearLng !== undefined && query.radiusKm !== undefined) {
+      // Only filter items that have coordinates
+      queryBuilder.andWhere('item.latitude IS NOT NULL AND item.longitude IS NOT NULL');
+
+      // Use PostGIS earth_distance function
+      // Convert km to meters for the query
+      const radiusMeters = query.radiusKm * 1000;
+
+      queryBuilder.andWhere(
+        `earth_distance(
+          ll_to_earth(item.latitude, item.longitude),
+          ll_to_earth(:nearLat, :nearLng)
+        ) <= :radius`,
+        { nearLat: query.nearLat, nearLng: query.nearLng, radius: radiusMeters }
+      );
     }
 
     // Get feeds matching type/subtype filters
@@ -266,21 +286,18 @@ export class RSSService {
       const matchingFeeds = await this.feedsRepository.find({ where: feedWhere });
       const feedIds = matchingFeeds.map((f) => f.id);
 
-      if (feedIds.length > 0) {
-        where.feedId = In(feedIds);
-      } else {
-        // No matching feeds, return empty
+      if (feedIds.length === 0) {
         return { items: [], total: 0 };
       }
+      queryBuilder.andWhere('item.feedId IN (:...typeFeedIds)', { typeFeedIds: feedIds });
     }
 
-    const [items, total] = await this.itemsRepository.findAndCount({
-      where,
-      relations: ['feed'],
-      order: { pubDate: 'DESC' },
-      take: limit,
-      skip: offset,
-    });
+    // Apply ordering and pagination
+    queryBuilder.orderBy('item.pubDate', 'DESC');
+    queryBuilder.take(limit);
+    queryBuilder.skip(offset);
+
+    const [items, total] = await queryBuilder.getManyAndCount();
 
     return { items, total };
   }

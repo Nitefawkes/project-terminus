@@ -57,6 +57,24 @@ export class ItemQueryDto {
   @IsString()
   search?: string;
 
+  // Geospatial filtering
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  nearLat?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  nearLng?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(20000) // Max 20,000 km (half Earth's circumference)
+  @Type(() => Number)
+  radiusKm?: number;
+
   @IsOptional()
   @IsNumber()
   @Min(1)
