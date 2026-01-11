@@ -16,7 +16,7 @@ import { satelliteTracker } from '@/lib/space-weather/satellite';
 import { clsx } from 'clsx';
 
 maplibregl.workerUrl = new URL(
-  'maplibre-gl/dist/maplibre-gl-csp-worker',
+  'maplibre-gl/dist/maplibre-gl-csp-worker.js',
   import.meta.url
 ).toString();
 
