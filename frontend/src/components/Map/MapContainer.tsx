@@ -2,7 +2,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import { useAppStore } from '@/store/appStore';
 import { calculateTerminator, terminatorToGeoJSON } from '@/lib/terminator';
 import { BUILTIN_LAYERS } from '@/lib/layers/types';
@@ -15,6 +14,11 @@ import { Clock, Layers as LayersIcon, Maximize2, Minimize2, Activity, Radio, Sat
 import { spaceWeatherAPI } from '@/lib/space-weather/api';
 import { satelliteTracker } from '@/lib/space-weather/satellite';
 import { clsx } from 'clsx';
+
+maplibregl.workerUrl = new URL(
+  'maplibre-gl/dist/maplibre-gl-csp-worker',
+  import.meta.url
+).toString();
 
 const MapContainer: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
