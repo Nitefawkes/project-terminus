@@ -15,7 +15,10 @@ import { spaceWeatherAPI } from '@/lib/space-weather/api';
 import { satelliteTracker } from '@/lib/space-weather/satellite';
 import { clsx } from 'clsx';
 
-maplibregl.workerUrl = '/maplibre-gl-csp-worker.js';
+maplibregl.workerUrl = new URL(
+  'maplibre-gl/dist/maplibre-gl-csp-worker.js',
+  import.meta.url
+).toString();
 
 const MapContainer: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
