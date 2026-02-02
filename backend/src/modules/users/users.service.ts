@@ -1,12 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
-import { UserPreferences } from './entities/user-preferences.entity';
-import { Pin } from './entities/pin.entity';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UpdatePreferencesDto } from './dto/update-preferences.dto';
-import { CreatePinDto } from './dto/create-pin.dto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { User } from "./entities/user.entity";
+import { UserPreferences } from "./entities/user-preferences.entity";
+import { Pin } from "./entities/pin.entity";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { UpdatePreferencesDto } from "./dto/update-preferences.dto";
+import { CreatePinDto } from "./dto/create-pin.dto";
 
 @Injectable()
 export class UsersService {
@@ -22,7 +22,7 @@ export class UsersService {
   async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['preferences', 'pins'],
+      relations: ["preferences", "pins"],
     });
 
     if (!user) {
@@ -32,14 +32,25 @@ export class UsersService {
     return user;
   }
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findById(id: string): Promise<User | null> {
     return this.usersRepository.findOne({
-      where: { email },
-      relations: ['preferences'],
+      where: { id },
+      relations: ["preferences", "pins"],
     });
   }
 
-  async create(email: string, passwordHash: string, name: string): Promise<User> {
+  async findByEmail(email: string): Promise<User | null> {
+    return this.usersRepository.findOne({
+      where: { email },
+      relations: ["preferences"],
+    });
+  }
+
+  async create(
+    email: string,
+    passwordHash: string,
+    name: string,
+  ): Promise<User> {
     const user = this.usersRepository.create({
       email,
       passwordHash,
@@ -51,9 +62,9 @@ export class UsersService {
     // Create default preferences
     const preferences = this.preferencesRepository.create({
       userId: savedUser.id,
-      mapStyle: 'dark',
+      mapStyle: "dark",
       defaultZoom: 2.0,
-      enabledLayers: ['terminator'],
+      enabledLayers: ["terminator"],
     });
 
     await this.preferencesRepository.save(preferences);
@@ -63,7 +74,7 @@ export class UsersService {
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
-    
+
     Object.assign(user, updateUserDto);
     await this.usersRepository.save(user);
 
@@ -109,7 +120,7 @@ export class UsersService {
   async getPins(userId: string): Promise<Pin[]> {
     return this.pinsRepository.find({
       where: { userId },
-      order: { createdAt: 'DESC' },
+      order: { createdAt: "DESC" },
     });
   }
 
@@ -124,4 +135,3 @@ export class UsersService {
     }
   }
 }
-
