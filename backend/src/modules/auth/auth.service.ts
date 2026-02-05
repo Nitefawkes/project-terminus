@@ -7,6 +7,10 @@ import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcrypt";
 import { UsersService } from "../users/users.service";
+import { RegisterDto } from "./dto/register.dto";
+import { LoginDto } from "./dto/login.dto";
+import { AuthResponseDto } from "./dto/auth-response.dto";
+import { User } from "../users/entities/user.entity";
 import { User } from "../users/entities/user.entity";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
@@ -89,6 +93,29 @@ export class AuthService {
   }
 
   async refreshToken(refreshToken: string): Promise<{ access_token: string }> {
+    let payload: { sub: string; email: string };
+    try {
+      payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.get("REFRESH_TOKEN_SECRET"),
+      });
+    } catch (error) {
+      throw new UnauthorizedException("Invalid refresh token");
+    }
+
+    const user = await this.validateUser(payload.sub);
+
+    const accessToken = await this.jwtService.signAsync(
+      {
+        sub: user.id,
+        email: user.email,
+      },
+      {
+        secret: this.configService.get("JWT_SECRET"),
+        expiresIn: this.configService.get("JWT_EXPIRES_IN"),
+      },
+    );
+
+    return { access_token: accessToken };
     try {
       const payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: this.configService.get("REFRESH_TOKEN_SECRET"),
