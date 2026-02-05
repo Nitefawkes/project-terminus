@@ -11,6 +11,10 @@ import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 import { AuthResponseDto } from "./dto/auth-response.dto";
 import { User } from "../users/entities/user.entity";
+import { User } from "../users/entities/user.entity";
+import { RegisterDto } from "./dto/register.dto";
+import { LoginDto } from "./dto/login.dto";
+import { AuthResponseDto } from "./dto/auth-response.dto";
 
 @Injectable()
 export class AuthService {
@@ -112,6 +116,26 @@ export class AuthService {
     );
 
     return { access_token: accessToken };
+    try {
+      const payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: this.configService.get("REFRESH_TOKEN_SECRET"),
+      });
+
+      const accessToken = await this.jwtService.signAsync(
+        {
+          sub: payload.sub,
+          email: payload.email,
+        },
+        {
+          secret: this.configService.get("JWT_SECRET"),
+          expiresIn: this.configService.get("JWT_EXPIRES_IN"),
+        },
+      );
+
+      return { access_token: accessToken };
+    } catch (error) {
+      throw new UnauthorizedException("Invalid refresh token");
+    }
   }
 
   async validateUser(userId: string): Promise<User> {
